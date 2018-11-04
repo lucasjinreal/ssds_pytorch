@@ -12,7 +12,7 @@ MODEL:
 TRAIN:
   MAX_EPOCHS: 200
   CHECKPOINTS_EPOCHS: 1
-  BATCH_SIZE: 32
+  BATCH_SIZE: 4
   TRAINABLE_SCOPE: 'base,norm,extras,transforms,pyramids,loc,conf'
   RESUME_SCOPE: 'base,norm,extras,transforms,pyramids,loc,conf'
   OPTIMIZER:
@@ -48,4 +48,4 @@ DATASET:
 EXP_DIR: './experiments/models/fssd_mobilenet_v2_coco'
 LOG_DIR: './experiments/models/fssd_mobilenet_v2_coco'
 RESUME_CHECKPOINT: './weights/fssd_lite/mobilenet_v2_fssd_lite_coco_22.2.pth'
-PHASE: ['test']
+PHASE: ['train']

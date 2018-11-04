@@ -24,6 +24,9 @@ from lib.utils.config_parse import cfg
 from lib.utils.eval_utils import *
 from lib.utils.visualize_utils import *
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
 class Solver(object):
     """
     A wrapper class for the training process
@@ -496,15 +499,8 @@ class Solver(object):
         for i in iter(range((num_images))):
             img = dataset.pull_image(i)
             scale = [img.shape[1], img.shape[0], img.shape[1], img.shape[0]]
-            # if use_gpu:
-            #     images = Variable(dataset.preproc(img)[0].unsqueeze(0).cuda(), volatile=True)
-            # else:
-            #     images = Variable(dataset.preproc(img)[0].unsqueeze(0), volatile=True)
-            #
-            # 0.4.0 new API
-            device = torch.device("cuda:0" if use_gpu else "cpu")
             with torch.no_grad():
-                images = torch.Tensor(dataset.preproc(img)[0].unsqueeze(0), device=device)
+                images = torch.Tensor(dataset.preproc(img)[0].unsqueeze(0)).to(device)
 
 
             _t.tic()

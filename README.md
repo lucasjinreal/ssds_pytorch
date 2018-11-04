@@ -14,3 +14,9 @@ All settings about base net and ssd variants are under `./experiments/cfgs/*.yml
 ```
 python3 train.py --cfg=./experiments/cfgs/rfb_lite_mobilenetv2_train_vocyml
 ```
+
+You can try train on coco first then using your custom dataset. If you have your coco data inside /path/to/coco, the just link it to `./data/` and you can find coco inside `./data`.
+
+![](https://s1.ax1x.com/2018/11/04/i5nrdO.png)
+
+That is what it trains like. After that I shall upload some trained model.

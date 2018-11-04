@@ -1,9 +1,9 @@
 from lib.dataset import voc
-# from lib.dataset import coco
+from lib.dataset import coco
 
 dataset_map = {
-                'voc': voc.VOCDetection#,
-                # 'coco': coco.COCODetection,
+                'voc': voc.VOCDetection,
+                'coco': coco.COCODetection,
             }
 
 def gen_dataset_fn(name):
