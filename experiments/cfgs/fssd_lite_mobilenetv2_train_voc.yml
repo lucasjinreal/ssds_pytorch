@@ -42,7 +42,7 @@ DATASET:
   DATASET: 'voc'
   DATASET_DIR: './data/VOCdevkit'
   TRAIN_SETS: [['2007', 'trainval'], ['2012', 'trainval']]
-  TEST_SETS:  [['2007', 'test']]
+  TEST_SETS:  [['2007', 'val']]
   PROB: 0.6
 
 EXP_DIR: './experiments/models/fssd_mobilenet_v2_voc'
