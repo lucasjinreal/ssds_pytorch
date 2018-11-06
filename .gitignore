@@ -9,3 +9,5 @@ __pycache__
 log*
 .idea/
 saved_model/
+
+vendor/
