@@ -27,6 +27,7 @@ class ObjectDetector:
 
         # Utilize GPUs for computation
         self.use_gpu = torch.cuda.is_available()
+        self.device = torch.device('gpu') if torch.cuda.is_available() else torch.device('cpu')
         self.half = False
         if self.use_gpu:
             print('Utilize GPUs for computation')
@@ -49,10 +50,9 @@ class ObjectDetector:
         if cfg.RESUME_CHECKPOINT == '':
             AssertionError('RESUME_CHECKPOINT can not be empty')
         print('=> loading checkpoint {:s}'.format(cfg.RESUME_CHECKPOINT))
-        checkpoint = torch.load(cfg.RESUME_CHECKPOINT)
-        # checkpoint = torch.load(cfg.RESUME_CHECKPOINT, map_location='gpu' if self.use_gpu else 'cpu')
+        # checkpoint = torch.load(cfg.RESUME_CHECKPOINT)
+        checkpoint = torch.load(cfg.RESUME_CHECKPOINT, map_location='gpu' if self.use_gpu else 'cpu')
         self.model.load_state_dict(checkpoint)
-
         # test only
         self.model.eval()
 
@@ -65,11 +65,8 @@ class ObjectDetector:
 
         # preprocess image
         _t['preprocess'].tic()
-        x = Variable(self.preprocessor(img)[0].unsqueeze(0), volatile=True)
-        if self.use_gpu:
-            x = x.cuda()
-        if self.half:
-            x = x.half()
+        x = Variable(self.preprocessor(img)[0].unsqueeze(0)).to(self.device)
+
         preprocess_time = _t['preprocess'].toc()
 
         # forward
@@ -79,7 +76,11 @@ class ObjectDetector:
 
         # detect
         _t['detect'].tic()
+
+        print('before nms: ', out[0].size())
+        print(out[1].size())
         detections = self.detector.forward(out)
+        print('detections: ', detections)
         detect_time = _t['detect'].toc()
 
         # output

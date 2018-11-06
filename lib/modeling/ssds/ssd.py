@@ -7,6 +7,7 @@ import os
 
 from lib.layers import *
 
+
 class SSD(nn.Module):
     """Single Shot Multibox Architecture
     See: https://arxiv.org/pdf/1512.02325.pdf for more details.
@@ -74,7 +75,7 @@ class SSD(nn.Module):
             # TODO:lite is different in here, should be changed
             if k % 2 == 1:
                 sources.append(x)
-        
+
         if phase == 'feature':
             return sources
 
@@ -87,7 +88,7 @@ class SSD(nn.Module):
 
         if phase == 'eval':
             output = (
-                loc.view(loc.size(0), -1, 4),                   # loc preds
+                loc.view(loc.size(0), -1, 4),  # loc preds
                 self.softmax(conf.view(-1, self.num_classes)),  # conf preds
             )
         else:
@@ -97,6 +98,7 @@ class SSD(nn.Module):
             )
         return output
 
+
 def add_extras(base, feature_layer, mbox, num_classes, version):
     extra_layers = []
     loc_layers = []
@@ -105,30 +107,31 @@ def add_extras(base, feature_layer, mbox, num_classes, version):
     for layer, depth, box in zip(feature_layer[0], feature_layer[1], mbox):
         if 'lite' in version:
             if layer == 'S':
-                extra_layers += [ _conv_dw(in_channels, depth, stride=2, padding=1, expand_ratio=1) ]
+                extra_layers += [_conv_dw(in_channels, depth, stride=2, padding=1, expand_ratio=1)]
                 in_channels = depth
             elif layer == '':
-                extra_layers += [ _conv_dw(in_channels, depth, stride=1, expand_ratio=1) ]
+                extra_layers += [_conv_dw(in_channels, depth, stride=1, expand_ratio=1)]
                 in_channels = depth
             else:
                 in_channels = depth
-        else:    
+        else:
             if layer == 'S':
                 extra_layers += [
-                        nn.Conv2d(in_channels, int(depth/2), kernel_size=1),
-                        nn.Conv2d(int(depth/2), depth, kernel_size=3, stride=2, padding=1)  ]
+                    nn.Conv2d(in_channels, int(depth / 2), kernel_size=1),
+                    nn.Conv2d(int(depth / 2), depth, kernel_size=3, stride=2, padding=1)]
                 in_channels = depth
             elif layer == '':
                 extra_layers += [
-                        nn.Conv2d(in_channels, int(depth/2), kernel_size=1),
-                        nn.Conv2d(int(depth/2), depth, kernel_size=3)  ]
+                    nn.Conv2d(in_channels, int(depth / 2), kernel_size=1),
+                    nn.Conv2d(int(depth / 2), depth, kernel_size=3)]
                 in_channels = depth
             else:
                 in_channels = depth
-        
+
         loc_layers += [nn.Conv2d(in_channels, box * 4, kernel_size=3, padding=1)]
         conf_layers += [nn.Conv2d(in_channels, box * num_classes, kernel_size=3, padding=1)]
     return base, extra_layers, (loc_layers, conf_layers)
+
 
 # based on the implementation in https://github.com/tensorflow/models/blob/master/research/object_detection/models/feature_map_generators.py#L213
 # when the expand_ratio is 1, the implemetation is nearly same. Since the shape is always change, I do not add the shortcut as what mobilenetv2 did.
@@ -147,6 +150,7 @@ def _conv_dw(inp, oup, stride=1, padding=0, expand_ratio=1):
         nn.BatchNorm2d(oup),
     )
 
+
 def _conv(inp, oup, stride=1, padding=0):
     return nn.Sequential(
         nn.Conv2d(inp, oup, 3, stride, padding, bias=False),
@@ -161,6 +165,7 @@ def build_ssd(base, feature_layer, mbox, num_classes):
     """
     base_, extras_, head_ = add_extras(base(), feature_layer, mbox, num_classes, version='ssd')
     return SSD(base_, extras_, head_, feature_layer, num_classes)
+
 
 def build_ssd_lite(base, feature_layer, mbox, num_classes):
     """Single Shot Multibox Architecture for embeded system
