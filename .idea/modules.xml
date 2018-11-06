@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/ssds.iml" filepath="$PROJECT_DIR$/.idea/ssds.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ssds_pytorch.iml" filepath="$PROJECT_DIR$/.idea/ssds_pytorch.iml" />
     </modules>
   </component>
 </project>

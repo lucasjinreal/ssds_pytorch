@@ -15,6 +15,7 @@ and use merge_cfg_from_file(yaml_file) to load it and override the default
 options.
 """
 
+
 class AttrDict(dict):
 
     def __getattr__(self, name):
@@ -30,6 +31,7 @@ class AttrDict(dict):
             self.__dict__[name] = value
         else:
             self[name] = value
+
 
 __C = AttrDict()
 
@@ -67,14 +69,13 @@ __C.MODEL.STEPS = []
 __C.MODEL.SIZES = [0.2, 0.95]
 
 # ASPECT_RATIOS for the proposed bounding box, 1 is default contains
-__C.MODEL.ASPECT_RATIOS = [[2,3], [2, 3], [2, 3], [2, 3], [2], [2]]
+__C.MODEL.ASPECT_RATIOS = [[2, 3], [2, 3], [2, 3], [2, 3], [2], [2]]
 
 # 
 __C.MODEL.CLIP = True
 
 # FSSD setting, NUM_FUSED for fssd
 __C.MODEL.NUM_FUSED = 3
-
 
 # ---------------------------------------------------------------------------- #
 # Train options
@@ -130,7 +131,6 @@ __C.TEST = AttrDict()
 __C.TEST.BATCH_SIZE = __C.TRAIN.BATCH_SIZE
 __C.TEST.TEST_SCOPE = [0, 300]
 
-
 # ---------------------------------------------------------------------------- #
 # Matcher options
 # ---------------------------------------------------------------------------- #
@@ -143,7 +143,6 @@ __C.MATCHER.UNMATCHED_THRESHOLD = 0.5
 __C.MATCHER.NEGPOS_RATIO = 3
 __C.MATCHER.VARIANCE = [0.1, 0.2]
 
-
 # ---------------------------------------------------------------------------- #
 # Post process options
 # ---------------------------------------------------------------------------- #
@@ -154,8 +153,7 @@ __C.POST_PROCESS.BACKGROUND_LABEL = __C.MATCHER.BACKGROUND_LABEL
 __C.POST_PROCESS.SCORE_THRESHOLD = 0.01
 __C.POST_PROCESS.IOU_THRESHOLD = 0.6
 __C.POST_PROCESS.MAX_DETECTIONS = 100
-__C.POST_PROCESS.VARIANCE = __C.MATCHER.VARIANCE 
-
+__C.POST_PROCESS.VARIANCE = __C.MATCHER.VARIANCE
 
 # ---------------------------------------------------------------------------- #
 # Dataset options
@@ -185,7 +183,6 @@ __C.DATASET.TEST_BATCH_SIZE = __C.TEST.BATCH_SIZE
 # number of workers to extract datas
 __C.DATASET.NUM_WORKERS = 8
 
-
 # ---------------------------------------------------------------------------- #
 # Export options
 # ---------------------------------------------------------------------------- #
@@ -195,6 +192,7 @@ __C.LOG_DIR = __C.EXP_DIR
 __C.RESUME_CHECKPOINT = ''
 __C.CHECKPOINTS_PREFIX = '{}_{}_{}'.format(__C.MODEL.SSDS, __C.MODEL.NETS, __C.DATASET.DATASET)
 __C.PHASE = ['train', 'eval', 'test']
+
 
 # def _merge_a_into_b(a, b):
 #   """Merge config dictionary a into config dictionary b, clobbering the
@@ -238,7 +236,7 @@ def _merge_a_into_b(a, b, stack=None):
         full_key = '.'.join(stack) + '.' + k if stack is not None else k
         # a must specify keys that are in b
         if k not in b:
-          raise KeyError('Non-existent config key: {}'.format(full_key))
+            raise KeyError('Non-existent config key: {}'.format(full_key))
 
         v = _decode_cfg_value(v_)
         v = _check_and_coerce_cfg_value_type(v, b[k], k, full_key)
@@ -262,7 +260,7 @@ def update_cfg():
     __C.MATCHER.NUM_CLASSES = __C.MODEL.NUM_CLASSES
     __C.POST_PROCESS.NUM_CLASSES = __C.MODEL.NUM_CLASSES
     __C.POST_PROCESS.BACKGROUND_LABEL = __C.MATCHER.BACKGROUND_LABEL
-    __C.POST_PROCESS.VARIANCE = __C.MATCHER.VARIANCE 
+    __C.POST_PROCESS.VARIANCE = __C.MATCHER.VARIANCE
     __C.CHECKPOINTS_PREFIX = '{}_{}_{}'.format(__C.MODEL.SSDS, __C.MODEL.NETS, __C.DATASET.DATASET)
 
 
@@ -271,9 +269,9 @@ def cfg_from_file(filename):
     import yaml
     with open(filename, 'r') as f:
         yaml_cfg = AttrDict(yaml.load(f))
-
     _merge_a_into_b(yaml_cfg, __C)
     update_cfg()
+
 
 def _decode_cfg_value(v):
     """Decodes a raw config value (e.g., from a yaml config files or command
@@ -306,6 +304,7 @@ def _decode_cfg_value(v):
     except SyntaxError:
         pass
     return v
+
 
 def _check_and_coerce_cfg_value_type(value_a, value_b, key, full_key):
     """Checks that `value_a`, which is intended to replace `value_b` is of the

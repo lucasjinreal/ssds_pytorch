@@ -31,6 +31,7 @@ class Solver(object):
     """
     A wrapper class for the training process
     """
+
     def __init__(self):
         self.cfg = cfg
 
@@ -50,7 +51,7 @@ class Solver(object):
 
         # Utilize GPUs for computation
         self.use_gpu = torch.cuda.is_available()
-        device = torch.device("cuda:0" if self.use_gpu else "cpu")
+        self.device = torch.device("cuda:0" if self.use_gpu else "cpu")
         if self.use_gpu:
             print('Utilize GPUs for computation')
             print('Number of GPU available', torch.cuda.device_count())
@@ -60,7 +61,7 @@ class Solver(object):
             self.priors = self.priors.to(device)
             cudnn.benchmark = True
             # if torch.cuda.device_count() > 1:
-                # self.model = torch.nn.DataParallel(self.model).module
+            # self.model = torch.nn.DataParallel(self.model).module
 
         # Print the model architecture and parameters
         print('Model architectures:\n{}\n'.format(self.model))
@@ -84,7 +85,6 @@ class Solver(object):
         self.output_dir = cfg.EXP_DIR
         self.checkpoint = cfg.RESUME_CHECKPOINT
         self.checkpoint_prefix = cfg.CHECKPOINTS_PREFIX
-
 
     def save_checkpoints(self, epochs, iters=None):
         if not os.path.exists(self.output_dir):
@@ -155,7 +155,7 @@ class Solver(object):
 
         checkpoint = self.model.state_dict()
 
-        unresume_dict = set(checkpoint)-set(pretrained_dict)
+        unresume_dict = set(checkpoint) - set(pretrained_dict)
         if len(unresume_dict) != 0:
             print("=> UNResume weigths:")
             print(unresume_dict)
@@ -163,7 +163,6 @@ class Solver(object):
         checkpoint.update(pretrained_dict)
 
         return self.model.load_state_dict(checkpoint)
-
 
     def find_previous(self):
         if not os.path.exists(os.path.join(self.output_dir, 'checkpoint_list.txt')):
@@ -187,7 +186,6 @@ class Solver(object):
                     m.state_dict()[key][...] = 1
             elif key.split('.')[-1] == 'bias':
                 m.state_dict()[key][...] = 0
-
 
     def initialize(self):
         # TODO: ADD INIT ways
@@ -229,19 +227,21 @@ class Solver(object):
 
         # warm_up epoch
         warm_up = self.cfg.TRAIN.LR_SCHEDULER.WARM_UP_EPOCHS
-        for epoch in iter(range(start_epoch+1, self.max_epochs+1)):
-            #learning rate
+        for epoch in iter(range(start_epoch + 1, self.max_epochs + 1)):
+            # learning rate
             sys.stdout.write('\rEpoch {epoch:d}/{max_epochs:d}:\n'.format(epoch=epoch, max_epochs=self.max_epochs))
             if epoch > warm_up:
-                self.exp_lr_scheduler.step(epoch-warm_up)
+                self.exp_lr_scheduler.step(epoch - warm_up)
             if 'train' in cfg.PHASE:
-                self.train_epoch(self.model, self.train_loader, self.optimizer, self.criterion, self.writer, epoch, self.use_gpu)
+                self.train_epoch(self.model, self.train_loader, self.optimizer, self.criterion, self.writer, epoch,
+                                 self.use_gpu)
             if 'eval' in cfg.PHASE:
-                self.eval_epoch(self.model, self.eval_loader, self.detector, self.criterion, self.writer, epoch, self.use_gpu)
+                self.eval_epoch(self.model, self.eval_loader, self.detector, self.criterion, self.writer, epoch,
+                                self.use_gpu)
             if 'test' in cfg.PHASE:
                 self.test_epoch(self.model, self.test_loader, self.detector, self.output_dir, self.use_gpu)
             if 'visualize' in cfg.PHASE:
-                self.visualize_epoch(self.model, self.visualize_loader, self.priorbox, self.writer, epoch,  self.use_gpu)
+                self.visualize_epoch(self.model, self.visualize_loader, self.priorbox, self.writer, epoch, self.use_gpu)
 
             if epoch % cfg.TRAIN.CHECKPOINTS_EPOCHS == 0:
                 self.save_checkpoints(epoch)
@@ -251,24 +251,28 @@ class Solver(object):
         if previous:
             for epoch, resume_checkpoint in zip(previous[0], previous[1]):
                 if self.cfg.TEST.TEST_SCOPE[0] <= epoch <= self.cfg.TEST.TEST_SCOPE[1]:
-                    sys.stdout.write('\rEpoch {epoch:d}/{max_epochs:d}:\n'.format(epoch=epoch, max_epochs=self.cfg.TEST.TEST_SCOPE[1]))
+                    sys.stdout.write('\rEpoch {epoch:d}/{max_epochs:d}:\n'.format(epoch=epoch,
+                                                                                  max_epochs=self.cfg.TEST.TEST_SCOPE[
+                                                                                      1]))
                     self.resume_checkpoint(resume_checkpoint)
                     if 'eval' in cfg.PHASE:
-                        self.eval_epoch(self.model, self.eval_loader, self.detector, self.criterion, self.writer, epoch, self.use_gpu)
+                        self.eval_epoch(self.model, self.eval_loader, self.detector, self.criterion, self.writer, epoch,
+                                        self.use_gpu)
                     if 'test' in cfg.PHASE:
-                        self.test_epoch(self.model, self.test_loader, self.detector, self.output_dir , self.use_gpu)
+                        self.test_epoch(self.model, self.test_loader, self.detector, self.output_dir, self.use_gpu)
                     if 'visualize' in cfg.PHASE:
-                        self.visualize_epoch(self.model, self.visualize_loader, self.priorbox, self.writer, epoch,  self.use_gpu)
+                        self.visualize_epoch(self.model, self.visualize_loader, self.priorbox, self.writer, epoch,
+                                             self.use_gpu)
         else:
             sys.stdout.write('\rCheckpoint {}:\n'.format(self.checkpoint))
             self.resume_checkpoint(self.checkpoint)
             if 'eval' in cfg.PHASE:
-                self.eval_epoch(self.model, self.eval_loader, self.detector, self.criterion, self.writer, 0, self.use_gpu)
+                self.eval_epoch(self.model, self.eval_loader, self.detector, self.criterion, self.writer, 0,
+                                self.use_gpu)
             if 'test' in cfg.PHASE:
-                self.test_epoch(self.model, self.test_loader, self.detector, self.output_dir , self.use_gpu)
+                self.test_epoch(self.model, self.test_loader, self.detector, self.output_dir, self.use_gpu)
             if 'visualize' in cfg.PHASE:
-                self.visualize_epoch(self.model, self.visualize_loader, self.priorbox, self.writer, 0,  self.use_gpu)
-
+                self.visualize_epoch(self.model, self.visualize_loader, self.priorbox, self.writer, 0, self.use_gpu)
 
     def train_epoch(self, model, data_loader, optimizer, criterion, writer, epoch, use_gpu):
         model.train()
@@ -290,10 +294,9 @@ class Solver(object):
             #     targets = [Variable(anno, volatile=True) for anno in targets]
             #
             # 0.4.0 new API
-            device = torch.device("cuda:0" if use_gpu else "cpu")
-            images = images.to(device)
+            images = images.to(self.device)
             with torch.no_grad():
-                targets = [anno.to(device) for anno in targets]
+                targets = [anno.to(self.device) for anno in targets]
 
             _t.tic()
             # forward
@@ -316,14 +319,15 @@ class Solver(object):
             conf_loss += loss_c.item()
 
             # log per iter
-            log = '\r==>Train: || {iters:d}/{epoch_size:d} in {time:.3f}s [{prograss}] || loc_loss: {loc_loss:.4f} cls_loss: {cls_loss:.4f}\r'.format(
-                    prograss='#'*int(round(10*iteration/epoch_size)) + '-'*int(round(10*(1-iteration/epoch_size))), iters=iteration, epoch_size=epoch_size,
-                    time=time, loc_loss=loss_l.item(), cls_loss=loss_c.item())
+            log = '{iters:d}/{epoch_size:d} in {time:.3f}s [{prograss}] | loc_loss: {loc_loss:.4f} cls_loss: {cls_loss:.4f}'.format(
+                prograss='#' * int(round(10 * iteration / epoch_size)) + '-' * int(
+                    round(10 * (1 - iteration / epoch_size))), iters=iteration, epoch_size=epoch_size,
+                time=time, loc_loss=loss_l.item(), cls_loss=loss_c.item())
 
             # log for tensorboard
-            writer.add_scalar('Train/loss_l', loss_l.item(), iteration+(epoch-1)*epoch_size)
-            writer.add_scalar('Train/loss_c', loss_c.item(), iteration+(epoch-1)*epoch_size)
-            writer.add_scalar('Train/loss', loss.item(), iteration+(epoch-1)*epoch_size)
+            writer.add_scalar('Train/loss_l', loss_l.item(), iteration + (epoch - 1) * epoch_size)
+            writer.add_scalar('Train/loss_c', loss_c.item(), iteration + (epoch - 1) * epoch_size)
+            writer.add_scalar('Train/loss', loss.item(), iteration + (epoch - 1) * epoch_size)
 
             print(log)
             sys.stdout.flush()
@@ -332,16 +336,16 @@ class Solver(object):
         print('\r')
         sys.stdout.flush()
         lr = optimizer.param_groups[0]['lr']
-        log = '\r==>Train: || Total_time: {time:.3f}s || loc_loss: {loc_loss:.4f} conf_loss: {conf_loss:.4f} || lr: {lr:.6f}\n'.format(lr=lr,
-                time=_t.total_time, loc_loss=loc_loss/epoch_size, conf_loss=conf_loss/epoch_size)
+        log = '\r==>Train: || Total_time: {time:.3f}s || loc_loss: {loc_loss:.4f} conf_loss: {conf_loss:.4f} || lr: {lr:.6f}\n'.format(
+            lr=lr,
+            time=_t.total_time, loc_loss=loc_loss / epoch_size, conf_loss=conf_loss / epoch_size)
         print(log)
         sys.stdout.flush()
 
         # log for tensorboard
-        writer.add_scalar('Train/loc_loss', loc_loss/epoch_size, epoch)
-        writer.add_scalar('Train/conf_loss', conf_loss/epoch_size, epoch)
+        writer.add_scalar('Train/loc_loss', loc_loss / epoch_size, epoch)
+        writer.add_scalar('Train/conf_loss', conf_loss / epoch_size, epoch)
         writer.add_scalar('Train/lr', lr, epoch)
-
 
     def eval_epoch(self, model, data_loader, detector, criterion, writer, epoch, use_gpu):
         model.eval()
@@ -360,7 +364,7 @@ class Solver(object):
         npos = [0] * model.num_classes
 
         for iteration in iter(range((epoch_size))):
-        # for iteration in iter(range((10))):
+            # for iteration in iter(range((10))):
             images, targets = next(batch_iterator)
             # if use_gpu:
             #     images = Variable(images.cuda())
@@ -370,10 +374,9 @@ class Solver(object):
             #     targets = [Variable(anno, volatile=True) for anno in targets]
             #
             # 0.4.0 new API
-            device = torch.device("cuda:0" if use_gpu else "cpu")
-            images = torch.Tensor(images, device=device)
+            images = torch.Tensor(images).to(self.device)
             with torch.no_grad():
-                targets = [torch.Tensor(anno, device=device) for anno in targets]
+                targets = [torch.Tensor(anno).to(self.device) for anno in targets]
 
             _t.tic()
             # forward
@@ -397,8 +400,9 @@ class Solver(object):
 
             # log per iter
             log = '\r==>Eval: || {iters:d}/{epoch_size:d} in {time:.3f}s [{prograss}] || loc_loss: {loc_loss:.4f} cls_loss: {cls_loss:.4f}\r'.format(
-                    prograss='#'*int(round(10*iteration/epoch_size)) + '-'*int(round(10*(1-iteration/epoch_size))), iters=iteration, epoch_size=epoch_size,
-                    time=time, loc_loss=loss_l.item(), cls_loss=loss_c.item())
+                prograss='#' * int(round(10 * iteration / epoch_size)) + '-' * int(
+                    round(10 * (1 - iteration / epoch_size))), iters=iteration, epoch_size=epoch_size,
+                time=time, loc_loss=loss_l.item(), cls_loss=loss_c.item())
 
             sys.stdout.write(log)
             sys.stdout.flush()
@@ -409,14 +413,15 @@ class Solver(object):
         # log per epoch
         sys.stdout.write('\r')
         sys.stdout.flush()
-        log = '\r==>Eval: || Total_time: {time:.3f}s || loc_loss: {loc_loss:.4f} conf_loss: {conf_loss:.4f} || mAP: {mAP:.6f}\n'.format(mAP=ap,
-                time=_t.total_time, loc_loss=loc_loss/epoch_size, conf_loss=conf_loss/epoch_size)
+        log = '\r==>Eval: || Total_time: {time:.3f}s || loc_loss: {loc_loss:.4f} conf_loss: {conf_loss:.4f} || mAP: {mAP:.6f}\n'.format(
+            mAP=ap,
+            time=_t.total_time, loc_loss=loc_loss / epoch_size, conf_loss=conf_loss / epoch_size)
         sys.stdout.write(log)
         sys.stdout.flush()
 
         # log for tensorboard
-        writer.add_scalar('Eval/loc_loss', loc_loss/epoch_size, epoch)
-        writer.add_scalar('Eval/conf_loss', conf_loss/epoch_size, epoch)
+        writer.add_scalar('Eval/loc_loss', loc_loss / epoch_size, epoch)
+        writer.add_scalar('Eval/conf_loss', conf_loss / epoch_size, epoch)
         writer.add_scalar('Eval/mAP', ap, epoch)
         viz_pr_curve(writer, prec, rec, epoch)
         viz_archor_strategy(writer, size, gt_label, epoch)
@@ -484,7 +489,6 @@ class Solver(object):
     #     print('Evaluating detections')
     #     data_loader.dataset.evaluate_detections(all_boxes, output_dir)
 
-
     def test_epoch(self, model, data_loader, detector, output_dir, use_gpu):
         model.eval()
 
@@ -492,7 +496,7 @@ class Solver(object):
         num_images = len(dataset)
         num_classes = detector.num_classes
         all_boxes = [[[] for _ in range(num_images)] for _ in range(num_classes)]
-        empty_array = np.transpose(np.array([[],[],[],[],[]]),(1,0))
+        empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
         _t = Timer()
 
@@ -500,8 +504,7 @@ class Solver(object):
             img = dataset.pull_image(i)
             scale = [img.shape[1], img.shape[0], img.shape[1], img.shape[0]]
             with torch.no_grad():
-                images = torch.Tensor(dataset.preproc(img)[0].unsqueeze(0)).to(device)
-
+                images = torch.Tensor(dataset.preproc(img)[0].unsqueeze(0).to(self.device)).to(self.device)
 
             _t.tic()
             # forward
@@ -527,9 +530,10 @@ class Solver(object):
                 all_boxes[j][i] = np.array(cls_dets)
 
             # log per iter
-            log = '\r==>Test: || {iters:d}/{epoch_size:d} in {time:.3f}s [{prograss}]\r'.format(
-                    prograss='#'*int(round(10*i/num_images)) + '-'*int(round(10*(1-i/num_images))), iters=i, epoch_size=num_images,
-                    time=time)
+            log = '{iters:d}/{epoch_size:d} in {time:.3f}s [{prograss}]\r'.format(
+                prograss='#' * int(round(10 * i / num_images)) + '-' * int(round(10 * (1 - i / num_images))), iters=i,
+                epoch_size=num_images,
+                time=time)
             sys.stdout.write(log)
             sys.stdout.flush()
 
@@ -541,11 +545,10 @@ class Solver(object):
         print('Evaluating detections')
         data_loader.dataset.evaluate_detections(all_boxes, output_dir)
 
-
     def visualize_epoch(self, model, data_loader, priorbox, writer, epoch, use_gpu):
         model.eval()
 
-        img_index = random.randint(0, len(data_loader.dataset)-1)
+        img_index = random.randint(0, len(data_loader.dataset) - 1)
 
         # get img
         image = data_loader.dataset.pull_image(img_index)
@@ -561,15 +564,13 @@ class Solver(object):
 
         # preproc image & visualize preprocess prograss
         # images = Variable(preproc(image, anno)[0].unsqueeze(0), volatile=True)
-        
+
         # if use_gpu:
         #     images = images.cuda()
 
         # 0.4.0 new API
-        device = torch.device("cuda:0" if use_gpu else "cpu")
         with torch.no_grad():
-            images = torch.Tensor(preproc(image, anno)[0].unsqueeze(0), device=device)
-
+            images = torch.Tensor(preproc(image, anno)[0].unsqueeze(0)).to(self.device)
 
         # visualize feature map in base and extras
         base_out = viz_module_feature_maps(writer, model.base, images, module_name='base', epoch=epoch)
@@ -580,25 +581,25 @@ class Solver(object):
         model.train()
         images.requires_grad = True
         # images.volatile=False
-        base_out = viz_module_grads(writer, model, model.base, images, images, preproc.means, module_name='base', epoch=epoch)
+        base_out = viz_module_grads(writer, model, model.base, images, images, preproc.means, module_name='base',
+                                    epoch=epoch)
 
         # TODO: add more...
-
 
     def configure_optimizer(self, trainable_param, cfg):
         if cfg.OPTIMIZER == 'sgd':
             optimizer = optim.SGD(trainable_param, lr=cfg.LEARNING_RATE,
-                        momentum=cfg.MOMENTUM, weight_decay=cfg.WEIGHT_DECAY)
+                                  momentum=cfg.MOMENTUM, weight_decay=cfg.WEIGHT_DECAY)
         elif cfg.OPTIMIZER == 'rmsprop':
             optimizer = optim.RMSprop(trainable_param, lr=cfg.LEARNING_RATE,
-                        momentum=cfg.MOMENTUM, alpha=cfg.MOMENTUM_2, eps=cfg.EPS, weight_decay=cfg.WEIGHT_DECAY)
+                                      momentum=cfg.MOMENTUM, alpha=cfg.MOMENTUM_2, eps=cfg.EPS,
+                                      weight_decay=cfg.WEIGHT_DECAY)
         elif cfg.OPTIMIZER == 'adam':
             optimizer = optim.Adam(trainable_param, lr=cfg.LEARNING_RATE,
-                        betas=(cfg.MOMENTUM, cfg.MOMENTUM_2), eps=cfg.EPS, weight_decay=cfg.WEIGHT_DECAY)
+                                   betas=(cfg.MOMENTUM, cfg.MOMENTUM_2), eps=cfg.EPS, weight_decay=cfg.WEIGHT_DECAY)
         else:
             AssertionError('optimizer can not be recognized.')
         return optimizer
-
 
     def configure_lr_scheduler(self, optimizer, cfg):
         if cfg.SCHEDULER == 'step':
@@ -613,18 +614,17 @@ class Solver(object):
             AssertionError('scheduler can not be recognized.')
         return scheduler
 
-
     def export_graph(self):
         self.model.train(False)
         # dummy_input = Variable(torch.randn(1, 3, cfg.MODEL.IMAGE_SIZE[0], cfg.MODEL.IMAGE_SIZE[1])).cuda()
         # 0.4.0 new API
-        dummy_input = torch.Tensor(torch.randn(1, 3, cfg.MODEL.IMAGE_SIZE[0], cfg.MODEL.IMAGE_SIZE[1]), device="cuda:0")
+        dummy_input = torch.Tensor(torch.randn(1, 3, cfg.MODEL.IMAGE_SIZE[0], cfg.MODEL.IMAGE_SIZE[1])).to(self.device)
 
         # Export the model
-        torch_out = torch.onnx._export(self.model,             # model being run
-                                       dummy_input,            # model input (or a tuple for multiple inputs)
-                                       "graph.onnx",           # where to save the model (can be a file or file-like object)
-                                       export_params=True)     # store the trained parameter weights inside the model file
+        torch_out = torch.onnx._export(self.model,  # model being run
+                                       dummy_input,  # model input (or a tuple for multiple inputs)
+                                       "graph.onnx",  # where to save the model (can be a file or file-like object)
+                                       export_params=True)  # store the trained parameter weights inside the model file
         # if not os.path.exists(cfg.EXP_DIR):
         #     os.makedirs(cfg.EXP_DIR)
         # self.writer.add_graph(self.model, (dummy_input, ))
@@ -634,6 +634,7 @@ def train_model():
     s = Solver()
     s.train_model()
     return True
+
 
 def test_model():
     s = Solver()
