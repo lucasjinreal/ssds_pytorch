@@ -56,35 +56,21 @@ class ObjectDetector:
         # test only
         self.model.eval()
 
-    def predict(self, img, threshold=0.6, check_time=False):
-        # make sure the input channel is 3 
+    def predict(self, img, threshold=0.6):
         assert img.shape[2] == 3
         scale = torch.Tensor([img.shape[1::-1], img.shape[1::-1]])
 
-        _t = {'preprocess': Timer(), 'net_forward': Timer(), 'detect': Timer(), 'output': Timer()}
-
-        # preprocess image
-        _t['preprocess'].tic()
         x = Variable(self.preprocessor(img)[0].unsqueeze(0)).to(self.device)
 
-        preprocess_time = _t['preprocess'].toc()
-
         # forward
-        _t['net_forward'].tic()
         out = self.model(x)  # forward pass
-        net_forward_time = _t['net_forward'].toc()
-
-        # detect
-        _t['detect'].tic()
 
         print('before nms: ', out[0].size())
         print(out[1].size())
         detections = self.detector.forward(out)
         print('detections: ', detections)
-        detect_time = _t['detect'].toc()
 
         # output
-        _t['output'].tic()
         labels, scores, coords = [list() for _ in range(3)]
         # for batch in range(detections.size(0)):
         #     print('Batch:', batch)
@@ -96,13 +82,4 @@ class ObjectDetector:
                 labels.append(classes - 1)
                 coords.append(detections[batch, classes, num, 1:] * scale)
                 num += 1
-        output_time = _t['output'].toc()
-        total_time = preprocess_time + net_forward_time + detect_time + output_time
-
-        if check_time is True:
-            return labels, scores, coords, (total_time, preprocess_time, net_forward_time, detect_time, output_time)
-            # total_time = preprocess_time + net_forward_time + detect_time + output_time
-            # print('total time: {} \n preprocess: {} \n net_forward: {} \n detect: {} \n output: {}'.format(
-            #     total_time, preprocess_time, net_forward_time, detect_time, output_time
-            # ))
         return labels, scores, coords

@@ -1,11 +1,21 @@
 # SSDs
 
-This repo contains many object detection methods that aims at **single shot and real time**, so the speed is the only thing we talk about. Currently we have some base networks that support object detection task such as MobileNet V2, ResNet, VGG etc. And some SSD variants such as FSSD, RFBNet, Retina, and even Yolo are contained.
+This repo contains many object detection methods that aims at **single shot and real time**, so the **speed** is the only thing we talk about. Currently we have some base networks that support object detection task such as MobileNet V2, ResNet, VGG etc. And some SSD variants such as FSSD, RFBNet, Retina, and even Yolo are contained.
+
+If you have any faster object detection methods welcome to discuss with me to merge it into our master branches.
+
+
 
 
 # Note
 
 Work are just being progressing. Will update some result and pretrained model after trained on some datasets. And of course, some out-of-box inference demo.
+
+[updates]:
+
+2018.11.06: As you know, after trained `fssd_mobilenetv2` the inference codes actually get none result, still debugging how this logic error comes out.
+
+
 
 # Train
 
